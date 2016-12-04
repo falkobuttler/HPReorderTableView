@@ -123,6 +123,7 @@ static NSString *HPReorderTableViewCellReuseIdentifier = @"HPReorderTableViewCel
     {
         UITableViewCell *cell = [self dequeueReusableCellWithIdentifier:HPReorderTableViewCellReuseIdentifier];
         cell.accessoryType = UITableViewCellAccessoryNone;
+        cell.layer.zPosition = -10;
         return cell;
     }
     else
@@ -131,9 +132,26 @@ static NSString *HPReorderTableViewCellReuseIdentifier = @"HPReorderTableViewCel
     }
 }
 
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+    return [_realDataSource numberOfSectionsInTableView:tableView];
+}
+
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     return [_realDataSource tableView:self numberOfRowsInSection:section];
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
+{
+    if ([_realDataSource respondsToSelector:@selector(tableView:titleForFooterInSection:)])
+    {
+        return [_realDataSource tableView:tableView titleForFooterInSection:section];
+    }
+    else
+    {
+        return nil;
+    }
 }
 
 #pragma mark - Data Source Forwarding
@@ -190,7 +208,7 @@ static NSString *HPReorderTableViewCellReuseIdentifier = @"HPReorderTableViewCel
 
 static UIImage* HPImageFromView(UIView *view)
 {
-    UIGraphicsBeginImageContextWithOptions(view.bounds.size, YES, 0);
+    UIGraphicsBeginImageContextWithOptions(view.bounds.size, NO, 0);
     [view.layer renderInContext:UIGraphicsGetCurrentContext()];
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
@@ -295,14 +313,11 @@ static void HPGestureRecognizerCancel(UIGestureRecognizer *gestureRecognizer)
 
 - (void)reorderCurrentRowToIndexPath:(NSIndexPath*)toIndexPath
 {
-    [self beginUpdates];
-    [self moveRowAtIndexPath:toIndexPath toIndexPath:_reorderCurrentIndexPath]; // Order is important to keep the empty cell behind
     if ([self.dataSource respondsToSelector:@selector(tableView:moveRowAtIndexPath:toIndexPath:)])
     {
         [self.dataSource tableView:self moveRowAtIndexPath:_reorderCurrentIndexPath toIndexPath:toIndexPath];
     }
     _reorderCurrentIndexPath = toIndexPath;
-    [self endUpdates];
 }
 
 #pragma mark Subclassing
@@ -410,6 +425,7 @@ static void HPGestureRecognizerCancel(UIGestureRecognizer *gestureRecognizer)
 {
     const CGPoint location  = [gesture locationInView:self];
     NSIndexPath *toIndexPath = [self indexPathForRowAtPoint:location];
+    if (!toIndexPath) return;
     
     if ([self.delegate respondsToSelector:@selector(tableView:targetIndexPathForMoveFromRowAtIndexPath:toProposedIndexPath:)])
     {
@@ -438,6 +454,15 @@ static void HPGestureRecognizerCancel(UIGestureRecognizer *gestureRecognizer)
     {
         return [self.hp_realDataSource tableView:tableView commitEditingStyle:editingStyle forRowAtIndexPath:indexPath];
     }
+}
+
+- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    if ([self.hp_realDataSource respondsToSelector:@selector(tableView:canEditRowAtIndexPath:)])
+    {
+        return [self.hp_realDataSource tableView:tableView canEditRowAtIndexPath:indexPath];
+    }
+    return NO;
 }
 
 @end

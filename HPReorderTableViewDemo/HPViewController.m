@@ -50,7 +50,10 @@
 
 - (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)sourceIndexPath toIndexPath:(NSIndexPath *)destinationIndexPath
 {
+    [self beginUpdates];
     [_objects exchangeObjectAtIndex:sourceIndexPath.row withObjectAtIndex:destinationIndexPath.row];
+    [tableView moveRowAtIndexPath:toIndexPath toIndexPath:destinationIndexPath];
+    [self endUpdates];
 }
 
 #pragma mark Utils
